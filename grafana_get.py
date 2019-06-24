@@ -1,8 +1,3 @@
-"""
-A custom component for Home Assistant
-Call Grafana api to get a rendered chart based on passed in query params
-"""
-
 from datetime import datetime, timedelta
 import pytz
 from urllib.request import Request, urlopen

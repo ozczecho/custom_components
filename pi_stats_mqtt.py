@@ -1,13 +1,8 @@
-"""
-A custom component for Home Assistant
-Uses the vcgencmd command to get the temperature reading of the device
-The temperature is then published on a MQTT message bus.
-"""
-
 import logging
 import re
 import voluptuous as vol
 
+from homeassistant.components import mqtt
 from homeassistant.const import CONF_SCAN_INTERVAL 
 import homeassistant.loader as loader
 import subprocess
@@ -36,9 +31,9 @@ CONFIG_SCHEMA = vol.Schema({
 
 def setup(hass, config):
     """Set up pi stats MQTT component"""
-    mqtt = loader.get_component(hass, 'mqtt')
     topic = config[DOMAIN].get(TOPIC)
     scan_interval = timedelta(seconds=config[DOMAIN].get(CONF_SCAN_INTERVAL))
+    mqtt = hass.components.mqtt
 
     _LOGGER.info("Custom component {} is setup.".format(DOMAIN))
 
@@ -46,7 +41,7 @@ def setup(hass, config):
         """Service to send a message."""
         msg = '{{"temperature":{}}}'.format(call.data.get('new_state'))  
         _LOGGER.warn("Publish " + msg)
-        mqtt.publish(hass, topic, msg)
+        mqtt.publish( topic, msg)
 
     def refresh(event_time):
         """Refresh"""
@@ -54,7 +49,7 @@ def setup(hass, config):
         # _LOGGER.warn("Publish " + result.stdout.decode('utf-8')) '0001:0004:01'
         # result is temp=45.6'C, so need to grab the number only
         msg = '{{"temperature":{}}}'.format(convert_result(result.stdout.decode('utf-8')))
-        mqtt.publish(hass, topic, msg)
+        mqtt.publish(topic, msg)
         _LOGGER.info("Published " + msg)
 
     def convert_result(result):

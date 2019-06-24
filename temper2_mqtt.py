@@ -1,13 +1,8 @@
-"""
-A custom component for Home Assistant
-Get temperature reading from a TEMper2 usb temperature probe and publish it on a MQTT bus.
-Requires: hid-query binary
-"""
-
 import logging
 import re
 import voluptuous as vol
 
+from homeassistant.components import mqtt
 from homeassistant.const import CONF_SCAN_INTERVAL 
 import homeassistant.loader as loader
 import subprocess
@@ -36,9 +31,9 @@ CONFIG_SCHEMA = vol.Schema({
 
 def setup(hass, config):
     """Set up Temper2 MQTT component"""
-    mqtt = loader.get_component(hass, 'mqtt')
     topic = config[DOMAIN].get(TOPIC)
     scan_interval = timedelta(seconds=config[DOMAIN].get(CONF_SCAN_INTERVAL))
+    mqtt = hass.components.mqtt
 
     #Need to get the device id of the Tempre@ device: 0001:0004:01
     result = subprocess.run([HID_QUERY_SCRIPT, '-e'], stdout=subprocess.PIPE)
@@ -58,7 +53,7 @@ def setup(hass, config):
         """Service to send a message."""
         msg = '{{"temperature":{}}}'.format(call.data.get('new_state'))  
         _LOGGER.warn("Publish " + msg)
-        mqtt.publish(hass, topic, msg)
+        mqtt.publish(topic, msg)
 
     def refresh(event_time):
         """Refresh"""
@@ -66,7 +61,7 @@ def setup(hass, config):
         current_temperature = calc_Temperature(temp_parts)
         if current_temperature < MAX_TEMP:
             msg = '{{"temperature":{}}}'.format(current_temperature)
-            mqtt.publish(hass, topic, msg)
+            mqtt.publish(topic, msg)
             _LOGGER.info("Published " + msg)
         else:
             # Sometimes the unit returns crazy values 328 deg celcius, for now we just log
