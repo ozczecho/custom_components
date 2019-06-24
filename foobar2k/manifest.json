@@ -1,0 +1,11 @@
+{
+    "domain": "foobar2k",
+    "name": "Foobar 2000 Player",
+    "documentation": "https://github.com/custom-components/media_player.braviatv_psk",
+    "requirements": [
+    ],
+    "dependencies": [],
+    "codeowners": [
+        "@ozczecho"
+    ]
+}
