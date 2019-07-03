@@ -14,6 +14,9 @@ STATE_PLAYING = "PLAYING"
 
 # Api calls
 GET_PLAYER_INFO = "/api/player"
+GET_PLAYLIST_ITEMS = "/api/playlists/{0}/items/{1}"
+GET_PLAYLISTS = "/api/playlists"
+GET_ALBUM_ART = "/api/artwork/{0}/{1}"
 
 POST_PLAYER = "/api/player"
 POST_PLAYER_PLAY = "/api/player/play"
@@ -23,19 +26,15 @@ POST_PLAYER_PREVIOUS = "/api/player/previous"
 POST_PLAYER_PAUSE = "/api/player/pause"
 POST_PLAYER_PAUSE_TOGGLE = "/api/player/pause/toggle"
 POST_PLAYER_RANDOM = "/api/player/random"
+POST_PLAYER_PLAY_PLAYLIST = "/api/player/play/{0}/{1}"
 
-GET_PLAYLIST_ITEMS = "/api/playlists/{0}/items/{1}"
-GET_ALBUM_ART = "/api/artwork/{0}/{1}"
-
-# Playback modes
 PLAYBACK_MODE_DEFAULT = 0
 PLAYBACK_MODE_REPEAT_PLAYLIST = 1
 PLAYBACK_MODE_REPEAT_TRACK = 2
 PLAYBACK_MODE_RANDOM = 3
-PLAYBACK_MODE_SHUFFLE_TRACKS = 4
+PLAYBACK_MODE_SHUFFLE_TRACKS = 4 
 PLAYBACK_MODE_SHUFFLE_ALBUMS = 5
 PLAYBACK_MODE_SHUFFLE_FOLDERS = 6
-
 
 class Foobar2k:
     """Api access to Foobar 2000 Server"""
@@ -50,15 +49,15 @@ class Foobar2k:
         _LOGGER.debug("[Foobar2k] __int__  with {0}".format(
             self._base_url))
 
-        self._title = None
-        self._state = None
+        self._title = ''
+        self._state = ''   
         self._track_duration = 0
         self._track_position = 0
         self._isMuted = False
         self._min_volume = -100
         self._album_art_url = None
-        self._artist = None
-        self._album = None       
+        self._current_playlist_id = None
+        self._playlists = {}
 
     def send_get_command(self, command, data):
         """Send command via HTTP get to FB2K server."""
@@ -99,6 +98,7 @@ class Foobar2k:
             response = self.send_get_command(GET_PLAYER_INFO, data=None)
             self._power = POWER_ON
             _LOGGER.debug("[Foobar2k] Doing update() POWER ON")
+            self.set_playlists()
         except ValueError:
             pass
         except requests.exceptions.RequestException:
@@ -111,32 +111,39 @@ class Foobar2k:
             if (response is not None):
                 data = json.loads(response)
                 _LOGGER.debug("[Foobar2k] Doing update() Loaded response {0}".format(data))
-
-                self._state = data["player"]["playbackState"]
-                self._playbackMode = data["player"]["playbackMode"]
                 if 'activeItem' in data["player"]:
-                    self._track_duration = data["player"]["activeItem"]["duration"]
-                    self._track_position = data["player"]["activeItem"]["position"]
-                    pl = data["player"]["activeItem"]["playlistId"]
-                    index = data["player"]["activeItem"]["index"]
-                    if (pl != "" and index != -1):
-                        self._album_art_url = "{0}{1}".format(self._base_url, GET_ALBUM_ART.format(pl, index))
+                    _LOGGER.debug("[Foobar2k] Doing update() Have activeItem")
+                    if 'playlistId' in data["player"]["activeItem"]:
+                        _LOGGER.debug(
+                            "[Foobar2k] Doing update() Have playlistId")
+                        self._current_playlist_id = data["player"]["activeItem"]["playlistId"]
+                        index = data["player"]["activeItem"]["index"]
+                        self._track_duration = data["player"]["activeItem"]["duration"]
+                        self._track_position = data["player"]["activeItem"]["position"]
+                        self._album_art_url = "{0}{1}".format(
+                            self._base_url, GET_ALBUM_ART.format(self._current_playlist_id, index))
+
                         currently = self.send_get_command(GET_PLAYLIST_ITEMS.format(
-                            pl, index), data='{"columns":["%artist%","%title%", "%track%", "%album%"]}')
+                            self._current_playlist_id, index), data='{"columns":["%artist%","%title%", "%track%", "%album%"]}')
                         if (currently is not None):
-                            _LOGGER.debug("[Foobar2k] Doing update() Have current song")
+                            _LOGGER.debug(
+                                "[Foobar2k] Doing update() Have current song")
                             i = json.loads(currently)
+                            _LOGGER.debug("Currently Playing {0} {1}".format(
+                                i["playlistItems"]["items"][0]["columns"][0], i["playlistItems"]["items"][0]["columns"][1]))
                             self._artist = i["playlistItems"]["items"][0]["columns"][0]
                             self._title = i["playlistItems"]["items"][0]["columns"][1]
                             self._album = i["playlistItems"]["items"][0]["columns"][3]
-                            _LOGGER.debug("Currently Playing {0} {1}".format(self._artist, self._title))
-                    else:
-                        _LOGGER.info("No Song selected.")
 
+                self._state = data["player"]["playbackState"]
+                self._playbackMode = data["player"]["playbackMode"]
+ 
                 if 'volume' in data["player"]:
                     self._isMuted = data["player"]["volume"]["isMuted"]
                     self._volume = data["player"]["volume"]["value"]
                     self._min_volume = data["player"]["volume"]["min"]
+
+                _LOGGER.debug("[Foobar2k] update {0} {1} {2}".format( self._artist, self._title, self._album))
 
             # Finished
             return True
@@ -212,6 +219,22 @@ class Foobar2k:
         """Duration of the Track"""
         return self._track_duration
 
+    @property
+    def playlists(self):
+        """ Get a list of all playlists """
+        return self._playlists
+
+    @property
+    def current_playlist(self):
+        """Get the current playlist"""
+        if (self._playlists == {}):
+            return None
+        else:
+            for title, id in self._playlists.items():
+                if (id == self._current_playlist_id):
+                    return title
+            return None
+
     def toggle_play_pause(self):
         """Toggle play pause media player."""
         _LOGGER.debug("[Foobar2k] In Play / Pause")
@@ -280,3 +303,24 @@ class Foobar2k:
             _LOGGER.debug("[Foobar2k] PlaybackMode data {0}".format(data))
             self.send_post_command(POST_PLAYER, data=data)
             self._playbackMode = mode
+
+    def set_playlists(self):
+        """ Retrieve all available playlists from player"""
+        _LOGGER.debug("[Foobar2k] Getting playlists")
+        if (self._power == POWER_ON):
+            playlists = {}
+            response = self.send_get_command(GET_PLAYLISTS, data = None)
+            data = json.loads(response)
+            _LOGGER.debug("[Foobar2k] Have  playlists {0}".format(data))
+            for pl in data["playlists"]:
+                playlists[pl["title"]] = pl["id"]
+                if (pl["isCurrent"]):
+                    self._current_playlist_id = pl["id"]
+            self._playlists = playlists
+
+    def set_playlist_play(self, playlist_id, index):
+        """ Set the playlist and song index"""
+        self.send_post_command(POST_PLAYER_PLAY_PLAYLIST.format(playlist_id, index), data=None)
+        self._current_playlist_id = playlist_id
+        time.sleep(0.2)
+        self.update()
