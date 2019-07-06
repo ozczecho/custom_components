@@ -36,6 +36,16 @@ PLAYBACK_MODE_SHUFFLE_TRACKS = 4
 PLAYBACK_MODE_SHUFFLE_ALBUMS = 5
 PLAYBACK_MODE_SHUFFLE_FOLDERS = 6
 
+playback_modes = {
+    PLAYBACK_MODE_DEFAULT : 'Default',
+    PLAYBACK_MODE_REPEAT_PLAYLIST : 'Repeat Playlist',
+    PLAYBACK_MODE_REPEAT_TRACK : 'Repeat Track',
+    PLAYBACK_MODE_RANDOM : 'Random',
+    PLAYBACK_MODE_SHUFFLE_TRACKS : 'Shuffle Tracks',
+    PLAYBACK_MODE_SHUFFLE_ALBUMS : 'Shuffle Albums',
+    PLAYBACK_MODE_SHUFFLE_FOLDERS : 'Shuffle Folders'
+}
+
 class Foobar2k:
     """Api access to Foobar 2000 Server"""
 
@@ -58,6 +68,7 @@ class Foobar2k:
         self._album_art_url = None
         self._current_playlist_id = None
         self._playlists = {}
+        self._playback_mode = PLAYBACK_MODE_DEFAULT
 
     def send_get_command(self, command, data):
         """Send command via HTTP get to FB2K server."""
@@ -136,7 +147,7 @@ class Foobar2k:
                             self._album = i["playlistItems"]["items"][0]["columns"][3]
 
                 self._state = data["player"]["playbackState"]
-                self._playbackMode = data["player"]["playbackMode"]
+                self._playback_mode = data["player"]["playbackMode"]
  
                 if 'volume' in data["player"]:
                     self._isMuted = data["player"]["volume"]["isMuted"]
@@ -171,7 +182,7 @@ class Foobar2k:
     @property
     def isShuffle(self):
         """Is Shuffle True / False."""
-        return self._playbackMode == PLAYBACK_MODE_RANDOM
+        return self._playback_mode == PLAYBACK_MODE_RANDOM
 
     @property
     def volume(self):
@@ -234,6 +245,15 @@ class Foobar2k:
                 if (id == self._current_playlist_id):
                     return title
             return None
+    @property
+    def playback_mode(self):
+        """Get the current playback mode"""
+        return self._playback_mode
+
+    @property
+    def playback_modes(self):
+        """Get the current playback mode"""
+        return list(playback_modes.values())
 
     def toggle_play_pause(self):
         """Toggle play pause media player."""
@@ -295,15 +315,6 @@ class Foobar2k:
             self.send_post_command(POST_PLAYER, data=data)
             self._track_position = position
 
-    def set_playbackMode(self, mode):
-        """Change the playback mode. Can be Default, Repeat (PlayList), Repeat (Track), Random, Shuffle (Tracks), Shuffle (Albums), Shuffle (Folders)"""
-        _LOGGER.debug("[Foobar2k] In Playback Mode {0}".format(mode))
-        if (self._power == POWER_ON):
-            data = json.dumps({"playbackMode": mode})
-            _LOGGER.debug("[Foobar2k] PlaybackMode data {0}".format(data))
-            self.send_post_command(POST_PLAYER, data=data)
-            self._playbackMode = mode
-
     def set_playlists(self):
         """ Retrieve all available playlists from player"""
         _LOGGER.debug("[Foobar2k] Getting playlists")
@@ -324,3 +335,21 @@ class Foobar2k:
         self._current_playlist_id = playlist_id
         time.sleep(0.2)
         self.update()
+
+    def set_playback_mode(self, new_mode):
+        """Change the playback mode. Can be Default, Repeat (PlayList), Repeat (Track), Random, Shuffle (Tracks), Shuffle (Albums), Shuffle (Folders)"""
+        _LOGGER.debug("[Foobar2k] In Set playback mode")
+        if (self._power == POWER_ON):
+            mode = PLAYBACK_MODE_DEFAULT
+            for m in playback_modes:
+                if (playback_modes[m] == new_mode):
+                    mode = m
+                    break
+ 
+            data = json.dumps({"playbackMode": mode})
+            _LOGGER.debug("[Foobar2k] PlaybackMode data {0}".format(data))
+            self.send_post_command(POST_PLAYER, data=data)
+            self._playback_mode = mode
+
+    def get_playback_mode_description(self, mode):
+        return playback_modes[mode]

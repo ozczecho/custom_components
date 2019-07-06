@@ -14,7 +14,8 @@ from homeassistant.components.media_player.const import (
     SUPPORT_TURN_ON, SUPPORT_TURN_OFF, SUPPORT_PLAY_MEDIA, SUPPORT_STOP, SUPPORT_PLAY, SUPPORT_SHUFFLE_SET, SUPPORT_SEEK,
     SUPPORT_PAUSE, SUPPORT_VOLUME_MUTE, SUPPORT_VOLUME_STEP, SUPPORT_VOLUME_SET, SUPPORT_PREVIOUS_TRACK, SUPPORT_NEXT_TRACK, 
     MEDIA_TYPE_MUSIC, ATTR_APP_NAME, ATTR_MEDIA_ALBUM_ARTIST, ATTR_MEDIA_ALBUM_NAME, ATTR_MEDIA_DURATION, ATTR_MEDIA_PLAYLIST,
-    ATTR_MEDIA_SHUFFLE, ATTR_MEDIA_TITLE, ATTR_MEDIA_TRACK, ATTR_MEDIA_VOLUME_MUTED, SUPPORT_SELECT_SOURCE)
+    ATTR_MEDIA_SHUFFLE, ATTR_MEDIA_TITLE, ATTR_MEDIA_TRACK, ATTR_MEDIA_VOLUME_MUTED, SUPPORT_SELECT_SOURCE, SUPPORT_SELECT_SOUND_MODE,
+    ATTR_SOUND_MODE, ATTR_SOUND_MODE_LIST)
 
 from homeassistant.const import (
     CONF_HOST, CONF_NAME, CONF_PORT, CONF_TIMEOUT, STATE_OFF, STATE_ON,  STATE_PAUSED, STATE_PLAYING, STATE_UNKNOWN, STATE_IDLE)
@@ -41,6 +42,7 @@ SUPPORT_FOOBAR_PLAYER = \
     SUPPORT_PLAY | \
     SUPPORT_PREVIOUS_TRACK | \
     SUPPORT_SELECT_SOURCE | \
+    SUPPORT_SELECT_SOUND_MODE | \
     SUPPORT_SHUFFLE_SET | \
     SUPPORT_STOP | \
     SUPPORT_VOLUME_MUTE |  \
@@ -88,7 +90,9 @@ class Foobar2kDevice(MediaPlayerDevice):
         self._track_duration = None
         self._shuffle = False
         self._current_playlist = None
+        self._current_sound_mode = None
         self._playlists = []
+        self._sound_mode_list = self._service.playback_modes
 
     def update(self):
         self._service.update()
@@ -97,6 +101,8 @@ class Foobar2kDevice(MediaPlayerDevice):
         self._shuffle = self._service.isShuffle
         self._playlists = self._service.playlists
         self._current_playlist = self._service.current_playlist
+        self._current_sound_mode = self._service.get_playback_mode_description(
+            self._service.playback_mode)
         if (self.state == STATE_PLAYING):
             self._album_art = self._service.album_art
             self._title = self._service.title
@@ -220,6 +226,13 @@ class Foobar2kDevice(MediaPlayerDevice):
             return ["Empty"]
         else:
             return list(self._playlists.keys())
+    @property
+    def sound_mode(self):
+        return self._current_sound_mode
+
+    @property
+    def sound_mode_list(self):
+        return self._sound_mode_list
 
     # @property
     # def should_poll(self):
@@ -276,7 +289,7 @@ class Foobar2kDevice(MediaPlayerDevice):
         """Send the media player the command for setting the shuffle mode."""
         _LOGGER.debug("[Media_Player_FB2K] set_shuffle Called **{0}**".format(shuffle))
         mode = PLAYBACK_MODE_RANDOM if shuffle else PLAYBACK_MODE_DEFAULT
-        self._service.set_playbackMode(mode)
+        self._service.set_playback_mode(self._service.get_playback_mode_description(mode))
 
     def select_source(self, source):
         _LOGGER.debug("[Media_Player_FB2K] Setting source {0}".format(source))
@@ -286,3 +299,8 @@ class Foobar2kDevice(MediaPlayerDevice):
         playlist_id = self._playlists.get(source)
         self._service.set_playlist_play(playlist_id, 0)
         self._current_playlist = source
+
+    def select_sound_mode(self, sound_mode):
+      """Switch the sound mode of the entity."""
+      _LOGGER.debug("[Media_Player_FB2K] Sound Mode {0}".format(sound_mode))
+      self._service.set_playback_mode(sound_mode)
