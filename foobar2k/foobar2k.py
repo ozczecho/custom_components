@@ -99,9 +99,7 @@ class Foobar2k:
             return None
 
     def update(self):
-        """
-        Get the latest status information from FB2K server
-        """
+        """Get the latest status information from FB2K server"""
 
         _LOGGER.debug("[Foobar2k] Doing update()")
         # Get current status of the FB2K server
@@ -124,27 +122,25 @@ class Foobar2k:
                 _LOGGER.debug("[Foobar2k] Doing update() Loaded response {0}".format(data))
                 if 'activeItem' in data["player"]:
                     _LOGGER.debug("[Foobar2k] Doing update() Have activeItem")
-                    if 'playlistId' in data["player"]["activeItem"]:
-                        _LOGGER.debug(
-                            "[Foobar2k] Doing update() Have playlistId")
-                        self._current_playlist_id = data["player"]["activeItem"]["playlistId"]
+                    if ('playlistId' in data["player"]["activeItem"]):
                         index = data["player"]["activeItem"]["index"]
-                        self._track_duration = data["player"]["activeItem"]["duration"]
-                        self._track_position = data["player"]["activeItem"]["position"]
-                        self._album_art_url = "{0}{1}".format(
-                            self._base_url, GET_ALBUM_ART.format(self._current_playlist_id, index))
+                        if (index >= 0):
+                            _LOGGER.debug("[Foobar2k] Doing update() Have index")
+                            self._current_playlist_id = data["player"]["activeItem"]["playlistId"]
+                            self._track_duration = data["player"]["activeItem"]["duration"]
+                            self._track_position = data["player"]["activeItem"]["position"]
+                            self._album_art_url = "{0}{1}".format(self._base_url, GET_ALBUM_ART.format(self._current_playlist_id, index))
 
-                        currently = self.send_get_command(GET_PLAYLIST_ITEMS.format(
-                            self._current_playlist_id, index), data='{"columns":["%artist%","%title%", "%track%", "%album%"]}')
-                        if (currently is not None):
-                            _LOGGER.debug(
-                                "[Foobar2k] Doing update() Have current song")
-                            i = json.loads(currently)
-                            _LOGGER.debug("Currently Playing {0} {1}".format(
-                                i["playlistItems"]["items"][0]["columns"][0], i["playlistItems"]["items"][0]["columns"][1]))
-                            self._artist = i["playlistItems"]["items"][0]["columns"][0]
-                            self._title = i["playlistItems"]["items"][0]["columns"][1]
-                            self._album = i["playlistItems"]["items"][0]["columns"][3]
+                            currently = self.send_get_command(GET_PLAYLIST_ITEMS.format(
+                                self._current_playlist_id, index), data='{"columns":["%artist%","%title%", "%track%", "%album%"]}')
+                            if (currently is not None):
+                                _LOGGER.debug("[Foobar2k] Doing update() Have current song")
+                                i = json.loads(currently)
+                                _LOGGER.debug("Currently Playing {0} {1}".format(
+                                    i["playlistItems"]["items"][0]["columns"][0], i["playlistItems"]["items"][0]["columns"][1]))
+                                self._artist = i["playlistItems"]["items"][0]["columns"][0]
+                                self._title = i["playlistItems"]["items"][0]["columns"][1]
+                                self._album = i["playlistItems"]["items"][0]["columns"][3]
 
                 self._state = data["player"]["playbackState"]
                 self._playback_mode = data["player"]["playbackMode"]
@@ -156,7 +152,6 @@ class Foobar2k:
 
                 _LOGGER.debug("[Foobar2k] update {0} {1} {2}".format( self._artist, self._title, self._album))
 
-            # Finished
             return True
 
     @property
@@ -192,7 +187,7 @@ class Foobar2k:
     @property
     def state(self):
         """Can be paused, stopped, playing"""
-        _LOGGER.debug("[Foobar2k] Getting the state {0}".format(self._state))
+        _LOGGER.debug("[Foobar2k] State {0}".format(self._state))
         return self._state
 
     @property
@@ -245,6 +240,7 @@ class Foobar2k:
                 if (id == self._current_playlist_id):
                     return title
             return None
+
     @property
     def playback_mode(self):
         """Get the current playback mode"""
@@ -259,7 +255,6 @@ class Foobar2k:
         """Toggle play pause media player."""
         _LOGGER.debug("[Foobar2k] In Play / Pause")
         if (self._power == POWER_ON):
-            _LOGGER.debug("[Foobar2k] Play / Pause Calling")
             self.send_post_command(POST_PLAYER_PAUSE_TOGGLE, data=None)
 
     def play(self):
