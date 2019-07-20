@@ -15,17 +15,17 @@ A Home Assistant Python library to control [foobar2000](http://www.foobar2000.or
  * Restart Home Assistant
  * The foobar2k media player should work with any media player front end. It has been tested with the excellent [Minimalistic media card](https://github.com/kalkih/mini-media-player). The settings I use are:
  ```yaml
-      - type: custom:mini-media-player
-        entity: media_player.my_foobar_server    
-        volume_stateless: false
-        artwork: full-cover-fit
-        source: icon
-        sound_mode: full
-        hide:
-           name: true
-           icon: true   
-           shuffle: false
-           sound_mode: false
+    - type: custom:mini-media-player
+      entity: media_player.my_foobar_server    
+      volume_stateless: false
+      artwork: full-cover-fit
+      source: icon
+      sound_mode: full
+      hide:
+         name: true
+         icon: true   
+         shuffle: false
+         sound_mode: false
 ```
  
 ## Thank you
