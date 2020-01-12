@@ -12,16 +12,16 @@ from homeassistant.components.media_player import (
 # https://github.com/home-assistant/home-assistant/blob/dev/homeassistant/components/media_player/const.py
 from homeassistant.components.media_player.const import (
     SUPPORT_TURN_ON, SUPPORT_TURN_OFF, SUPPORT_PLAY_MEDIA, SUPPORT_STOP, SUPPORT_PLAY, SUPPORT_SHUFFLE_SET, SUPPORT_SEEK,
-    SUPPORT_PAUSE, SUPPORT_VOLUME_MUTE, SUPPORT_VOLUME_STEP, SUPPORT_VOLUME_SET, SUPPORT_PREVIOUS_TRACK, SUPPORT_NEXT_TRACK, 
+    SUPPORT_PAUSE, SUPPORT_VOLUME_MUTE, SUPPORT_VOLUME_STEP, SUPPORT_VOLUME_SET, SUPPORT_PREVIOUS_TRACK, SUPPORT_NEXT_TRACK,
     MEDIA_TYPE_MUSIC, ATTR_APP_NAME, ATTR_MEDIA_ALBUM_ARTIST, ATTR_MEDIA_ALBUM_NAME, ATTR_MEDIA_DURATION, ATTR_MEDIA_PLAYLIST,
     ATTR_MEDIA_SHUFFLE, ATTR_MEDIA_TITLE, ATTR_MEDIA_TRACK, ATTR_MEDIA_VOLUME_MUTED, SUPPORT_SELECT_SOURCE, SUPPORT_SELECT_SOUND_MODE,
     ATTR_SOUND_MODE, ATTR_SOUND_MODE_LIST)
 
 from homeassistant.const import (
-    CONF_HOST, CONF_NAME, CONF_PORT, CONF_TIMEOUT, STATE_OFF, STATE_ON,  STATE_PAUSED, STATE_PLAYING, STATE_UNKNOWN, STATE_IDLE)
+    CONF_HOST, CONF_NAME, CONF_PORT, CONF_TIMEOUT, STATE_OFF, STATE_ON, STATE_PAUSED, STATE_PLAYING, STATE_UNKNOWN, STATE_IDLE)
 
 from custom_components.foobar2k.foobar2k import (
-    PLAYBACK_MODE_DEFAULT, PLAYBACK_MODE_REPEAT_PLAYLIST, PLAYBACK_MODE_REPEAT_TRACK, PLAYBACK_MODE_RANDOM ,
+    PLAYBACK_MODE_DEFAULT, PLAYBACK_MODE_REPEAT_PLAYLIST, PLAYBACK_MODE_REPEAT_TRACK, PLAYBACK_MODE_RANDOM,
     PLAYBACK_MODE_SHUFFLE_TRACKS, PLAYBACK_MODE_SHUFFLE_ALBUMS, PLAYBACK_MODE_SHUFFLE_FOLDERS)
 
 import homeassistant.helpers.config_validation as cv
@@ -30,11 +30,6 @@ import homeassistant.util.dt as dt_util
 _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 2
-
-# SUPPORT_FOOBAR_PLAYER = \
-#     SUPPORT_PAUSE | SUPPORT_VOLUME_MUTE | \
-#     SUPPORT_PLAY | SUPPORT_NEXT_TRACK | SUPPORT_PREVIOUS_TRACK | \
-#     SUPPORT_STOP | SUPPORT_SEEK | SUPPORT_VOLUME_STEP | SUPPORT_SELECT_SOURCE
 
 SUPPORT_FOOBAR_PLAYER = \
     SUPPORT_NEXT_TRACK | \
@@ -46,7 +41,7 @@ SUPPORT_FOOBAR_PLAYER = \
     SUPPORT_SHUFFLE_SET | \
     SUPPORT_STOP | \
     SUPPORT_VOLUME_MUTE |  \
-    SUPPORT_VOLUME_SET 
+    SUPPORT_VOLUME_SET
 # SUPPORT_SEEK | \
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
@@ -56,7 +51,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): cv.positive_int,
 })
 
- 
+
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the Foobar 2k platform."""
     from custom_components.foobar2k.foobar2k import Foobar2k
@@ -111,8 +106,7 @@ class Foobar2kDevice(MediaPlayerDevice):
             self._track_position = self._service.track_position
             self._track_duration = self._service.track_duration
             # self._last_update = dt_util.utcnow()
-        
-        
+
     @property
     def name(self):
         """Return the name of the device."""
@@ -122,10 +116,8 @@ class Foobar2kDevice(MediaPlayerDevice):
     def state(self):
         """Return the state of the device."""
         current_state = self._service.state
-        if (current_state == "playing"):
-            self._state = STATE_PLAYING
-        elif (current_state == "paused"):
-            self._state = STATE_PAUSED
+        if (current_state == STATE_PLAYING or current_state == STATE_PAUSED):
+            self._state = current_state
         else:
             self._state = STATE_IDLE
         _LOGGER.debug("Current State {0}".format(self._state))
@@ -202,7 +194,6 @@ class Foobar2kDevice(MediaPlayerDevice):
         """Return  current source name."""
         return self._current_playlist
 
-
     # @property
     # def media_playlist(self):
     #     """Title of Playlist currently playing."""
@@ -217,7 +208,6 @@ class Foobar2kDevice(MediaPlayerDevice):
     #             "[Media_Player_FB2K] media_playlist {0}".format(name))
     #     return name
 
-
     @property
     def source_list(self):
         """List of available input sources."""
@@ -226,6 +216,7 @@ class Foobar2kDevice(MediaPlayerDevice):
             return ["Empty"]
         else:
             return list(self._playlists.keys())
+
     @property
     def sound_mode(self):
         return self._current_sound_mode
@@ -268,7 +259,7 @@ class Foobar2kDevice(MediaPlayerDevice):
 
     def media_previous_track(self):
         """Send the media player the command to play the previous song"""
-        _LOGGER.debug("[Media_Player_FB2K] Next Track Called")
+        _LOGGER.debug("[Media_Player_FB2K] Previous Track Called")
         self._service.play_previous()
 
     def mute_volume(self, mute):
@@ -280,7 +271,7 @@ class Foobar2kDevice(MediaPlayerDevice):
         """Send the media player the command for setting the volume."""
         _LOGGER.debug("[Media_Player_FB2K] set_volume_level Called {0}".format(volume))
         self._service.set_volume(volume * 100)
-    
+
     # def media_seek(self, position):
     #     """Send the media player a command for seeking new position in track."""
     #     self._service.set_position(position)

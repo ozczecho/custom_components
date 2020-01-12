@@ -3,14 +3,14 @@ import logging
 import json.tool
 import time
 
-_LOGGER = logging.getLogger("Foobar2k")
+_LOGGER = logging.getLogger(__name__)
 
 # System const
 POWER_ON = "ON"
 POWER_OFF = "OFF"
-STATE_PAUSED = "PAUSED"
-STATE_STOPPED = "STOPPED"
-STATE_PLAYING = "PLAYING"
+STATE_PAUSED = "paused"
+STATE_STOPPED = "stopped"
+STATE_PLAYING = "playing"
 
 # Api calls
 GET_PLAYER_INFO = "/api/player"
@@ -32,18 +32,18 @@ PLAYBACK_MODE_DEFAULT = 0
 PLAYBACK_MODE_REPEAT_PLAYLIST = 1
 PLAYBACK_MODE_REPEAT_TRACK = 2
 PLAYBACK_MODE_RANDOM = 3
-PLAYBACK_MODE_SHUFFLE_TRACKS = 4 
+PLAYBACK_MODE_SHUFFLE_TRACKS = 4
 PLAYBACK_MODE_SHUFFLE_ALBUMS = 5
 PLAYBACK_MODE_SHUFFLE_FOLDERS = 6
 
 playback_modes = {
-    PLAYBACK_MODE_DEFAULT : 'Default',
-    PLAYBACK_MODE_REPEAT_PLAYLIST : 'Repeat Playlist',
-    PLAYBACK_MODE_REPEAT_TRACK : 'Repeat Track',
-    PLAYBACK_MODE_RANDOM : 'Random',
-    PLAYBACK_MODE_SHUFFLE_TRACKS : 'Shuffle Tracks',
-    PLAYBACK_MODE_SHUFFLE_ALBUMS : 'Shuffle Albums',
-    PLAYBACK_MODE_SHUFFLE_FOLDERS : 'Shuffle Folders'
+    PLAYBACK_MODE_DEFAULT: 'Default',
+    PLAYBACK_MODE_REPEAT_PLAYLIST: 'Repeat Playlist',
+    PLAYBACK_MODE_REPEAT_TRACK: 'Repeat Track',
+    PLAYBACK_MODE_RANDOM: 'Random',
+    PLAYBACK_MODE_SHUFFLE_TRACKS: 'Shuffle Tracks',
+    PLAYBACK_MODE_SHUFFLE_ALBUMS: 'Shuffle Albums',
+    PLAYBACK_MODE_SHUFFLE_FOLDERS: 'Shuffle Folders'
 }
 
 class Foobar2k:
@@ -54,19 +54,21 @@ class Foobar2k:
         self._host = host
         self._port = port
         self._timeout = timeout
-        self._base_url = "http://{host}:{port}".format(
-            host=self._host, port=self._port)
-        _LOGGER.debug("[Foobar2k] __int__  with {0}".format(
-            self._base_url))
+        self._base_url = "http://{host}:{port}".format(host=self._host, port=self._port)
+        _LOGGER.debug("[Foobar2k] __init__  with {0}".format(self._base_url))
 
         self._title = ''
-        self._state = ''   
+        self._state = STATE_STOPPED
+        self._artist = ''
+        self._album = ''
+        self._volume = 50
         self._track_duration = 0
         self._track_position = 0
         self._isMuted = False
         self._min_volume = -100
         self._album_art_url = None
         self._current_playlist_id = None
+        self._current_index = 0
         self._playlists = {}
         self._playback_mode = PLAYBACK_MODE_DEFAULT
 
@@ -126,6 +128,7 @@ class Foobar2k:
                         index = data["player"]["activeItem"]["index"]
                         if (index >= 0):
                             _LOGGER.debug("[Foobar2k] Doing update() Have index")
+                            self._current_index = index
                             self._current_playlist_id = data["player"]["activeItem"]["playlistId"]
                             self._track_duration = data["player"]["activeItem"]["duration"]
                             self._track_position = data["player"]["activeItem"]["position"]
@@ -144,29 +147,29 @@ class Foobar2k:
 
                 self._state = data["player"]["playbackState"]
                 self._playback_mode = data["player"]["playbackMode"]
- 
+
                 if 'volume' in data["player"]:
                     self._isMuted = data["player"]["volume"]["isMuted"]
                     self._volume = data["player"]["volume"]["value"]
                     self._min_volume = data["player"]["volume"]["min"]
 
-                _LOGGER.debug("[Foobar2k] update {0} {1} {2}".format( self._artist, self._title, self._album))
+                _LOGGER.debug("[Foobar2k] update {0} {1} {2} - {3}:{4}".format(self._artist, self._title, self._album, self._current_playlist_id, self._current_index))
 
             return True
 
     @property
     def host(self):
-        """Return the host ip as string."""
+        """Return the host address."""
         return self._host
 
     @property
     def port(self):
-        """Return the port as a number."""
+        """Return the host port."""
         return self._port
 
     @property
     def timeout(self):
-        """Return the timeout as a number."""
+        """Return the timeout."""
         return self._timeout
 
     @property
@@ -255,18 +258,33 @@ class Foobar2k:
         """Toggle play pause media player."""
         _LOGGER.debug("[Foobar2k] In Play / Pause")
         if (self._power == POWER_ON):
-            self.send_post_command(POST_PLAYER_PAUSE_TOGGLE, data=None)
+            if (self._state == STATE_STOPPED):
+                self.send_post_command(POST_PLAYER_PLAY_PLAYLIST.format(self._current_playlist_id, self._current_index), data=None)
+            else:            
+                self.send_post_command(POST_PLAYER_PAUSE_TOGGLE, data=None)
 
     def play(self):
         """Send play command to FB2K Server"""
         _LOGGER.debug("[Foobar2k] In Play")
         if (self._power == POWER_ON):
-            response = self.send_post_command(POST_PLAYER_PLAY, data=None)
+            response = None
+            if (self._state == STATE_STOPPED):
+                response = self.send_post_command(POST_PLAYER_PLAY_PLAYLIST.format(self._current_playlist_id, self._current_index), data=None)
+            else:
+                response = self.send_post_command(POST_PLAYER_PLAY, data=None)
             if (response is not None):
                 self._state = STATE_PLAYING
 
-    def play_next(self):
+    def stop(self):
         """Send stop command to FB2K Server"""
+        _LOGGER.debug("[Foobar2k] In Stop. Current state is {0}".format(self._state))
+        if (self._power == POWER_ON and self._state == STATE_PLAYING):
+            self.send_post_command(POST_PLAYER_STOP, data=None)
+            self._state = STATE_STOPPED
+            _LOGGER.debug("[Foobar2k] State now is {0}".format(self._state))
+
+    def play_next(self):
+        """Send next command to FB2K Server"""
         _LOGGER.debug("[Foobar2k] In Next")
         if (self._power == POWER_ON):
             self.send_post_command(POST_PLAYER_NEXT, data=None)
@@ -274,7 +292,7 @@ class Foobar2k:
             self.update()
 
     def play_previous(self):
-        """Send stop command to FB2K Server"""
+        """Send previous command to FB2K Server"""
         _LOGGER.debug("[Foobar2k] In Previous")
         if (self._power == POWER_ON):
             self.send_post_command(POST_PLAYER_PREVIOUS, data=None)
@@ -315,7 +333,7 @@ class Foobar2k:
         _LOGGER.debug("[Foobar2k] Getting playlists")
         if (self._power == POWER_ON):
             playlists = {}
-            response = self.send_get_command(GET_PLAYLISTS, data = None)
+            response = self.send_get_command(GET_PLAYLISTS, data=None)
             data = json.loads(response)
             _LOGGER.debug("[Foobar2k] Have  playlists {0}".format(data))
             for pl in data["playlists"]:
@@ -340,7 +358,7 @@ class Foobar2k:
                 if (playback_modes[m] == new_mode):
                     mode = m
                     break
- 
+
             data = json.dumps({"playbackMode": mode})
             _LOGGER.debug("[Foobar2k] PlaybackMode data {0}".format(data))
             self.send_post_command(POST_PLAYER, data=data)
