@@ -15,7 +15,7 @@ from homeassistant.components.media_player.const import (
     SUPPORT_PAUSE, SUPPORT_VOLUME_MUTE, SUPPORT_VOLUME_STEP, SUPPORT_VOLUME_SET, SUPPORT_PREVIOUS_TRACK, SUPPORT_NEXT_TRACK,
     MEDIA_TYPE_MUSIC, ATTR_APP_NAME, ATTR_MEDIA_ALBUM_ARTIST, ATTR_MEDIA_ALBUM_NAME, ATTR_MEDIA_DURATION, ATTR_MEDIA_PLAYLIST,
     ATTR_MEDIA_SHUFFLE, ATTR_MEDIA_TITLE, ATTR_MEDIA_TRACK, ATTR_MEDIA_VOLUME_MUTED, SUPPORT_SELECT_SOURCE, SUPPORT_SELECT_SOUND_MODE,
-    ATTR_SOUND_MODE, ATTR_SOUND_MODE_LIST)
+    ATTR_SOUND_MODE, ATTR_SOUND_MODE_LIST, ATTR_MEDIA_CONTENT_ID)
 
 from homeassistant.const import (
     CONF_HOST, CONF_NAME, CONF_PORT, CONF_TIMEOUT, STATE_OFF, STATE_ON, STATE_PAUSED, STATE_PLAYING, STATE_UNKNOWN, STATE_IDLE)
@@ -86,6 +86,7 @@ class Foobar2kDevice(MediaPlayerDevice):
         self._shuffle = False
         self._current_playlist = None
         self._current_sound_mode = None
+        self._media_path = None
         self._playlists = []
         self._sound_mode_list = self._service.playback_modes
 
@@ -103,6 +104,7 @@ class Foobar2kDevice(MediaPlayerDevice):
             self._title = self._service.title
             self._artist = self._service.artist
             self._album = self._service.album
+            self._media_path = self._service.media_path
             self._track_position = self._service.track_position
             self._track_duration = self._service.track_duration
             # self._last_update = dt_util.utcnow()
@@ -193,6 +195,11 @@ class Foobar2kDevice(MediaPlayerDevice):
     def source(self):
         """Return  current source name."""
         return self._current_playlist
+
+    @property
+    def media_content_id(self):
+        """Return current song full file path"""
+        return self._media_path
 
     # @property
     # def media_playlist(self):

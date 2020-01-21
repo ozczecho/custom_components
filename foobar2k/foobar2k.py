@@ -71,6 +71,7 @@ class Foobar2k:
         self._current_index = 0
         self._playlists = {}
         self._playback_mode = PLAYBACK_MODE_DEFAULT
+        self._path = None 
 
     def send_get_command(self, command, data):
         """Send command via HTTP get to FB2K server."""
@@ -109,7 +110,6 @@ class Foobar2k:
             response = self.send_get_command(GET_PLAYER_INFO, data=None)
             self._power = POWER_ON
             _LOGGER.debug("[Foobar2k] Doing update() POWER ON")
-            self.set_playlists()
         except ValueError:
             pass
         except requests.exceptions.RequestException:
@@ -122,6 +122,14 @@ class Foobar2k:
             if (response is not None):
                 data = json.loads(response)
                 _LOGGER.debug("[Foobar2k] Doing update() Loaded response {0}".format(data))
+                new_state = data["player"]["playbackState"]
+                if (new_state != self._state):
+                    _LOGGER.debug("[Foobar2k] Getting playlists")
+                    self.set_playlists()
+                    
+                self._state = new_state
+                self._playback_mode = data["player"]["playbackMode"]
+
                 if 'activeItem' in data["player"]:
                     _LOGGER.debug("[Foobar2k] Doing update() Have activeItem")
                     if ('playlistId' in data["player"]["activeItem"]):
@@ -135,7 +143,7 @@ class Foobar2k:
                             self._album_art_url = "{0}{1}".format(self._base_url, GET_ALBUM_ART.format(self._current_playlist_id, index))
 
                             currently = self.send_get_command(GET_PLAYLIST_ITEMS.format(
-                                self._current_playlist_id, index), data='{"columns":["%artist%","%title%", "%track%", "%album%"]}')
+                                self._current_playlist_id, index), data='{"columns":["%artist%","%title%", "%track%", "%album%", "%path%"]}')
                             if (currently is not None):
                                 _LOGGER.debug("[Foobar2k] Doing update() Have current song")
                                 i = json.loads(currently)
@@ -144,9 +152,7 @@ class Foobar2k:
                                 self._artist = i["playlistItems"]["items"][0]["columns"][0]
                                 self._title = i["playlistItems"]["items"][0]["columns"][1]
                                 self._album = i["playlistItems"]["items"][0]["columns"][3]
-
-                self._state = data["player"]["playbackState"]
-                self._playback_mode = data["player"]["playbackMode"]
+                                self._path = i["playlistItems"]["items"][0]["columns"][4]
 
                 if 'volume' in data["player"]:
                     self._isMuted = data["player"]["volume"]["isMuted"]
@@ -243,6 +249,16 @@ class Foobar2k:
                 if (id == self._current_playlist_id):
                     return title
             return None
+
+    @property
+    def current_index(self):
+        """Get the index of the current song"""
+        return self._current_index
+
+    @property
+    def media_path(self):
+        """Gets the full file path to the current media playing"""
+        return self._path
 
     @property
     def playback_mode(self):
