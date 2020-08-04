@@ -1,0 +1,15 @@
+{
+    "domain": "airtouch3",
+    "name": "AirTouch 3",
+    "config_flow": true,
+    "documentation": "https://github.com/ozczecho/vzduch",
+    "issue_tracker": "https://github.com/ozczecho/vzduch/issues",
+    "dependencies": [],
+    "after_dependencies": [
+        "http"
+    ],
+    "codeowners": [
+        "@ozczecho"
+    ],
+    "requirements": []
+}

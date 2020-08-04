@@ -1,0 +1,22 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Configure AirTouch 3",
+                "description": "Enter IP address of your local interface to AirTouch 3.",
+                "data": {
+                    "host": "[%key:common::config_flow::data::host%]",
+                    "port": "[%key:common::config_flow::data::port%]"
+                }
+            }
+        },
+        "abort": {
+            "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+        },
+        "error": {
+            "device_fail": "[%key:common::config_flow::error::device_fail%]",
+            "forbidden": "[%key:common::config_flow::error::forbidden%]",
+            "device_timeout": "[%key:common::config_flow::error::device_timeout%]"
+        }
+    }
+}
