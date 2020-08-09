@@ -17,7 +17,7 @@ I assume you have `vzduch-dotek` up and running. Please refer to that projects d
 
 ## Limitations
 
-* The climate component currently works for HA version `0.108` and earlier. Thats because of a renaming exercise in HA post the `0.108` release between `ClimateEntity` and `ClimateDevice`. This will be fixed as soon as I update my system to latest HA version.
+* The climate component tested against Home Assistant version `0.113.x`.
 * Only a subset of `AirTouch 3` Api have been implemented via `vzduch-dotek`. The imlemented Api include:
     * Get current state of aircon
     * Switch aircon on / off
