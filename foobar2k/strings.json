@@ -1,0 +1,27 @@
+{
+    "config": {
+        "flow_title": "Foobar 2000 Server: {name}",
+        "step": {
+            "user": {
+                "title": "Configure Foobar 2000 Server",
+                "data": {
+                    "host": "Host",
+                    "port": "Port"
+                },
+                "description": "Enter the IP address of your Foobar 2000 server."
+            },
+            "confirm": {
+                "title": "Foobar 2000 Server",
+                "description": "Please confirm adding the server"
+            },
+            "abort": {
+                "already_configured": "Foobar 2000 server is already configured"
+            },
+            "error": {
+                "device_fail": "Unexpected error",
+                "device_timeout": "Failed to connect",
+                "forbidden": "Invalid authentication"
+            }
+        }
+    }
+}

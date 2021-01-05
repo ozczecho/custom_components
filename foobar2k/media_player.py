@@ -7,7 +7,7 @@ from datetime import timedelta
 import voluptuous as vol
 
 from homeassistant.components.media_player import (
-    MediaPlayerDevice, PLATFORM_SCHEMA)
+    MediaPlayerEntity)
 
 # https://github.com/home-assistant/home-assistant/blob/dev/homeassistant/components/media_player/const.py
 from homeassistant.components.media_player.const import (
@@ -31,6 +31,10 @@ _LOGGER = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 2
 
+from .const import (
+    DOMAIN
+)
+
 SUPPORT_FOOBAR_PLAYER = \
     SUPPORT_NEXT_TRACK | \
     SUPPORT_PAUSE | \
@@ -41,40 +45,26 @@ SUPPORT_FOOBAR_PLAYER = \
     SUPPORT_SHUFFLE_SET | \
     SUPPORT_STOP | \
     SUPPORT_VOLUME_MUTE |  \
-    SUPPORT_VOLUME_SET
-# SUPPORT_SEEK | \
+    SUPPORT_VOLUME_SET | \
+    SUPPORT_SEEK
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Optional(CONF_HOST): cv.string,
-    vol.Optional(CONF_NAME): cv.string,
-    vol.Required(CONF_PORT): cv.port,
-    vol.Optional(CONF_TIMEOUT, default=DEFAULT_TIMEOUT): cv.positive_int,
-})
-
-
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_entry(hass, entry, async_add_entities):
     """Set up the Foobar 2k platform."""
     from custom_components.foobar2k.foobar2k import Foobar2k
 
-    name = config.get(CONF_NAME)
-    host = config.get(CONF_HOST)
-    port = config.get(CONF_PORT)
-    timeout = config.get(CONF_TIMEOUT)
+    foobar2k_api = hass.data[DOMAIN].get(entry.entry_id)
+    _LOGGER.debug(f"[Media_Player_FB2k] Init {foobar2k_api.host}:{foobar2k_api.port}")
 
-    fb2k_service = Foobar2k(
-        host=host, port=port, timeout=timeout)
-
-    add_entities([Foobar2kDevice(hass, fb2k_service, name)])
+    async_add_entities([Foobar2kDevice(foobar2k_api)], update_before_add=True)
 
 
-class Foobar2kDevice(MediaPlayerDevice):
+class Foobar2kDevice(MediaPlayerEntity):
 
-    def __init__(self, hass, fb2k, name):
+    def __init__(self, api):
         """Initialize the device."""
-        self.hass = hass
-        self._name = name
+        self._name = DOMAIN
         self._state = STATE_UNKNOWN
-        self._service = fb2k
+        self._service = api
         self._title = None
         self._artist = None
         self._album = None
@@ -87,11 +77,12 @@ class Foobar2kDevice(MediaPlayerDevice):
         self._current_playlist = None
         self._current_sound_mode = None
         self._media_path = None
+        self._last_update = None
         self._playlists = []
         self._sound_mode_list = self._service.playback_modes
 
-    def update(self):
-        self._service.update()
+    async def async_update(self):
+        await self._service.async_update()
         self._isMuted = self._service.isMuted
         self._volume = self._service.volume
         self._shuffle = self._service.isShuffle
@@ -107,10 +98,15 @@ class Foobar2kDevice(MediaPlayerDevice):
             self._media_path = self._service.media_path
             self._track_position = self._service.track_position
             self._track_duration = self._service.track_duration
-            # self._last_update = dt_util.utcnow()
+            self._last_update = dt_util.utcnow()
 
     @property
-    def name(self):
+    def unique_id(self) -> str:
+        """Return the unqiue id for this foobar server."""
+        return f'{self._name}_{self._service.unique_id}'
+
+    @property
+    def name(self) -> str:
         """Return the name of the device."""
         return self._name
 
@@ -122,7 +118,7 @@ class Foobar2kDevice(MediaPlayerDevice):
             self._state = current_state
         else:
             self._state = STATE_IDLE
-        _LOGGER.debug("Current State {0}".format(self._state))
+        _LOGGER.debug(f"[Media_Player_FB2k] Current State [{self._state}]")
 
         return self._state
 
@@ -169,21 +165,19 @@ class Foobar2kDevice(MediaPlayerDevice):
     @property
     def media_duration(self):
         """Return the duration of current playing media in seconds."""
-        _LOGGER.debug("[Media_Player_FB2K] media_duration Called {0}".format(
-            self._track_duration))
+        _LOGGER.debug(f"[Media_Player_FB2K] media_duration Called [{self._track_duration}]")
         return self._track_duration
 
     @property
     def media_position(self):
         """Return the position of current playing media in seconds."""
-        _LOGGER.debug("[Media_Player_FB2K] media_position Called {0}".format(
-            self._track_position))
+        _LOGGER.debug(f"[Media_Player_FB2K] media_position Called [{self._track_position}]")
         return self._track_position
 
-    # @property
-    # def media_position_updated_at(self):
-    #     """When was the position of the current playing media valid."""
-    #     return self._last_update
+    @property
+    def media_position_updated_at(self):
+        """When was the position of the current playing media valid."""
+        return self._last_update
 
     @property
     def media_image_url(self):
@@ -237,68 +231,68 @@ class Foobar2kDevice(MediaPlayerDevice):
     #     """Return True if entity has to be polled for state."""
     #     return True
 
-    def media_play_pause(self):
+    async def async_media_play_pause(self):
         """Send the media player the command for play/pause."""
         _LOGGER.debug("[Media_Player_FB2K] Play / Pause Called")
-        self._service.toggle_play_pause()
+        await self._service.toggle_play_pause()
 
-    def media_pause(self):
+    async def async_media_pause(self):
         """Send the media player the command for play/pause if playing."""
         _LOGGER.debug("[Media_Player_FB2K] Pause Called")
         if (self.state == STATE_PLAYING):
             _LOGGER.debug("[Media_Player_FB2K] Pausing")
-            media_play_pause()
+            async_media_play_pause()
 
-    def media_stop(self):
+    async def async_media_stop(self):
         """Send the media player the stop command."""
         _LOGGER.debug("[Media_Player_FB2K] Stop Called")
-        self._service.stop()
+        await self._service.stop()
 
-    def media_play(self):
+    async def async_media_play(self):
         """Send the media player the command to play at the current playlist."""
         _LOGGER.debug("[Media_Player_FB2K] Play Called")
-        self._service.play()
+        await self._service.play()
 
-    def media_next_track(self):
+    async def async_media_next_track(self):
         """Send the media player the command to play the next song"""
         _LOGGER.debug("[Media_Player_FB2K] Next Track Called")
-        self._service.play_next()
+        await self._service.play_next()
 
-    def media_previous_track(self):
+    async def async_media_previous_track(self):
         """Send the media player the command to play the previous song"""
         _LOGGER.debug("[Media_Player_FB2K] Previous Track Called")
-        self._service.play_previous()
+        await self._service.play_previous()
 
-    def mute_volume(self, mute):
+    async def async_mute_volume(self, mute):
         """Mute the volume."""
         _LOGGER.debug("[Media_Player_FB2K] Mute Called")
-        self._service.toggle_mute()
+        await self._service.toggle_mute()
 
-    def set_volume_level(self, volume):
+    async def async_set_volume_level(self, volume):
         """Send the media player the command for setting the volume."""
-        _LOGGER.debug("[Media_Player_FB2K] set_volume_level Called {0}".format(volume))
-        self._service.set_volume(volume * 100)
+        _LOGGER.debug(f"[Media_Player_FB2K] set_volume_level Called [{volume}]")
+        await self._service.set_volume(volume * 100)
 
-    # def media_seek(self, position):
-    #     """Send the media player a command for seeking new position in track."""
-    #     self._service.set_position(position)
+    async def async_media_seek(self, position):
+        """Send the media player a command for seeking new position in track."""
+        await self._service.set_position(position)
 
-    def set_shuffle(self, shuffle):
+    async def async_set_shuffle(self, shuffle):
         """Send the media player the command for setting the shuffle mode."""
-        _LOGGER.debug("[Media_Player_FB2K] set_shuffle Called **{0}**".format(shuffle))
+        _LOGGER.debug(f"[Media_Player_FB2K] set_shuffle Called **[{shuffle}]**")
         mode = PLAYBACK_MODE_RANDOM if shuffle else PLAYBACK_MODE_DEFAULT
-        self._service.set_playback_mode(self._service.get_playback_mode_description(mode))
+        await self._service.set_playback_mode(await self._service.get_playback_mode_description(mode))
 
-    def select_source(self, source):
-        _LOGGER.debug("[Media_Player_FB2K] Setting source {0}".format(source))
+    async def async_select_source(self, source):
+        _LOGGER.debug(f"[Media_Player_FB2K] Setting source [{source}]")
         if (source == self._current_playlist):
             return
 
         playlist_id = self._playlists.get(source)
-        self._service.set_playlist_play(playlist_id, 0)
+        await self._service.set_playlist_play(playlist_id, 0)
         self._current_playlist = source
 
-    def select_sound_mode(self, sound_mode):
+    async def async_select_sound_mode(self, sound_mode):
       """Switch the sound mode of the entity."""
-      _LOGGER.debug("[Media_Player_FB2K] Sound Mode {0}".format(sound_mode))
-      self._service.set_playback_mode(sound_mode)
+      _LOGGER.debug(f"[Media_Player_FB2K] Sound Mode [{sound_mode}]")
+      await self._service.set_playback_mode(sound_mode)
