@@ -93,7 +93,7 @@ class AT3Sensor(Entity):
         return {
             "is_available": self._sensor.is_available, 
             "is_low_battery": self._sensor.is_low_battery
-            }        
+            }
 
     async def async_update(self):
         """Retrieve latest state."""

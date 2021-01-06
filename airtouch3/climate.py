@@ -124,7 +124,7 @@ class AirTouch3Climate(ClimateEntity):
             ATTR_HVAC_MODE: list(HA_STATE_TO_AT3),
             ATTR_FAN_MODE: list(HA_FAN_MODE_TO_AT3)
         }
-        self._supported_features = SUPPORT_TARGET_TEMPERATURE | SUPPORT_FAN_MODE
+        self._supported_features = SUPPORTED_FEATURES
 
     @property
     def supported_features(self):
@@ -234,4 +234,3 @@ class AirTouch3Climate(ClimateEntity):
     async def async_update(self):
         """Retrieve latest state."""
         await self._api.async_update()
- 

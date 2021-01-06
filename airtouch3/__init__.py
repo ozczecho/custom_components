@@ -3,7 +3,6 @@ import asyncio
 from datetime import timedelta
 import logging
 
-from aiohttp import ClientConnectionError
 from async_timeout import timeout
 from custom_components.airtouch3.vzduch import Vzduch
 import voluptuous as vol
@@ -19,9 +18,6 @@ from homeassistant.util import Throttle
 from . import config_flow  # noqa: F401
 
 _LOGGER = logging.getLogger(__name__)
-
-PARALLEL_UPDATES = 0
-MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=60)
 
 COMPONENT_TYPES = ["climate", "sensor", "switch"]
 
@@ -45,7 +41,6 @@ async def async_setup(hass, config):
     )
     return True
 
-
 async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry):
     """Connect to Airtouch3 Unit"""
     conf = entry.data
@@ -64,7 +59,6 @@ async def async_setup_entry(hass: HomeAssistantType, entry: ConfigEntry):
         )
     return True
 
-
 async def async_unload_entry(hass, config_entry):
     """Unload a config entry."""
     await asyncio.wait(
@@ -78,13 +72,11 @@ async def async_unload_entry(hass, config_entry):
         hass.data.pop(DOMAIN)
     return True
 
-
 async def api_init(hass, host, port, timeout = TIMEOUT):
     """Init the Airtouch unit."""
 
     session = hass.helpers.aiohttp_client.async_get_clientsession()
     try:
-        #with timeout(TIMEOUT):
         _LOGGER.debug(f"We have host {host} port {port}")
         device = Vzduch(session, host, port, timeout)
         await device.async_update()
@@ -99,5 +91,3 @@ async def api_init(hass, host, port, timeout = TIMEOUT):
         return None
 
     return device
-
-

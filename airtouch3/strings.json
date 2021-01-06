@@ -1,22 +1,27 @@
 {
     "config": {
+        "flow_title": "AirTouch 3: {name}",
         "step": {
             "user": {
                 "title": "Configure AirTouch 3",
-                "description": "Enter IP address of your local interface to AirTouch 3.",
+                "description": "Enter IP address for the Vzduch Dotek Api.",
                 "data": {
-                    "host": "[%key:common::config_flow::data::host%]",
-                    "port": "[%key:common::config_flow::data::port%]"
+                    "host": "Host",
+                    "port": "Port"
                 }
             }
         },
+        "confirm": {
+            "title": "AirTouch 3",
+            "description": "Please confirm adding the AirTouch 3 component"
+        },
         "abort": {
-            "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+            "already_configured": "AirTouch 3 is already configured"
         },
         "error": {
-            "device_fail": "[%key:common::config_flow::error::device_fail%]",
-            "forbidden": "[%key:common::config_flow::error::forbidden%]",
-            "device_timeout": "[%key:common::config_flow::error::device_timeout%]"
+            "device_fail": "Unexpected error",
+            "device_timeout": "Failed to connect",
+            "forbidden": "Invalid authentication"
         }
     }
 }

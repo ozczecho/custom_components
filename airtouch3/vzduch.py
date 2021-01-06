@@ -85,9 +85,8 @@ class Vzduch:
                 _LOGGER.debug("[Vzduch] Have a response")
                 return response
             else:
-                _LOGGER.error((
-                    "Host %s returned HTTP status code %s to GET command at "
-                    "end point %s"), self.host, resp_obj.status, command)
+                _LOGGER.error(f"Host [{self._host}] returned HTTP status code [{resp_obj.status}] to GET command at "
+                    "end point [{command}]")
                 return None
 
     async def fetch_post(self, command, data):
@@ -100,9 +99,8 @@ class Vzduch:
                 _LOGGER.debug("[Vzduch] Have a response")
                 return response
             else:
-                _LOGGER.error((
-                    "Host %s returned HTTP status code %s to GET command at "
-                    "end point %s"), self.host, resp_obj.status, command)
+                _LOGGER.error(f"Host [{self._host}] returned HTTP status code [{resp_obj.status}] to POST command at "
+                    "end point [{command}]")
                 return None
 
     async def prep_fetch(self, verb, command, data = None, retries = 5):
@@ -122,7 +120,7 @@ class Vzduch:
         except ValueError:
             pass
         except ServerDisconnectedError as error:
-            _LOGGER.debug("[Vzduch] Disconnected Error. Retry Count %d", retries)
+            _LOGGER.debug(f"[Vzduch] Disconnected Error. Retry Count {retries}")
             if retries == 0:
                 raise error
             return await self.prep_fetch(command, data, retries=retries - 1)
@@ -146,7 +144,7 @@ class Vzduch:
             return
 
         data = json.loads(response)
-        _LOGGER.debug("[Vzduch] Loaded response {0}".format(data))
+        _LOGGER.debug(f"[Vzduch] Loaded response {data}")
         self._power = data["aircons"][self._selected_ac]["powerStatus"]
         self._name = data["aircons"][self._selected_ac]["name"]
         self._status = data["aircons"][self._selected_ac]["status"]

@@ -2,7 +2,6 @@ import asyncio
 import logging
 import voluptuous as vol
 
-from aiohttp import ClientError, web_exceptions
 from async_timeout import timeout
 from custom_components.airtouch3.vzduch import Vzduch
 
@@ -69,9 +68,7 @@ class AirTouch3ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 step_id="user", data_schema=self.schema, errors={"base": "device_fail"},
             )
 
-        name = f"AirTouch_{device.name}"
-        _LOGGER.debug(f"Device with name {name} has been setup")
-
+        _LOGGER.debug(f"Device with name AirTouch_{device.name} has been setup")
 
         return self._async_get_entry(user_input)
 
@@ -104,7 +101,6 @@ class AirTouch3ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 step_id="user", data_schema=self.schema, errors={"base": "device_fail"},
             )
 
-        name = f"AirThouch_{device['aircons'][self._selected_ac]['name']}"
         return self._async_get_entry({
                 CONF_HOST: host,
                 CONF_PORT: port

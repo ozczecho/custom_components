@@ -1,4 +1,5 @@
 {
+    "title": "AirTouch 3 Climate",
     "config": {
         "abort": {
             "already_configured": "Device is already configured"
@@ -14,8 +15,8 @@
                     "host": "Host",
                     "port": "Port"
                 },
-                "description": "Enter IP address of your local interface to AirTouch 3.",
-                "title": "Configure Airtouch 3"
+                "description": "Enter IP address for the Vzduch Dotek Api.",
+                "title": "Configure AirTouch 3"
             }
         }
     }
