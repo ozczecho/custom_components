@@ -161,13 +161,13 @@ class Vzduch:
             else:
                 zone = Vzduch_Zone(zone_data)
                 self._zones.append(zone)
-        for sensor_data in zone_data["sensors"]:
-            existing_sensor = list(filter(lambda x: x.id == sensor_data["id"], self._sensors))
-            if existing_sensor:
-                existing_sensor[0].update(sensor_data)
-            else:
-                sensor = Vzduch_Sensor(sensor_data)
-                self._sensors.append(sensor)
+            for sensor_data in zone_data["sensors"]:
+                existing_sensor = list(filter(lambda x: x.id == sensor_data["id"], self._sensors))
+                if existing_sensor:
+                    existing_sensor[0].update(sensor_data)
+                else:
+                    sensor = Vzduch_Sensor(sensor_data)
+                    self._sensors.append(sensor)
         _LOGGER.debug(f"[Vzduch] Set properties done. Zone count {len(self._zones)}")
 
     @property
