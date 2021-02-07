@@ -35,6 +35,11 @@ ZONE_TEMPERATURE_TYPE_USE_SENSOR = 1
 ZONE_TEMPERATURE_TYPE_USE_TOUCH_PAD = 2
 ZONE_TEMPERATURE_TYPE_USE_AVERAGE = 3
 
+THERMOSTAT_MODE_AC = 0
+THERMOSTAT_MODE_AVERAGE = 1
+THERMOSTAT_MODE_AUTO = 2
+THERMOSTAT_MODE_ZONE = 3
+
 TEMPERATURE_INCREMENT = 1
 TEMPERATURE_DECREMENT = -1
 
@@ -47,6 +52,7 @@ POST_POWER_SWITCH = "/api/aircons/{0}/switch/{1}"
 POST_AC_MODE = "/api/aircons/{0}/modes/{1}"
 POST_AC_FAN_MODE = "/api/aircons/{0}/fanmodes/{1}"
 POST_AC_TEMPERATURE = "/api/aircons/{0}/temperature/{1}"
+POST_ZONE_TEMPERATURE = "/api/aircons/{0}/zones/{1}/temperature/{2}"
 POST_ZONE_TOGGLE = "/api/aircons/{0}/zones/{1}/toggle"
 POST_ZONE_SWITCH = "/api/aircons/{0}/zones/{1}/switch/{2}"
 
@@ -68,6 +74,7 @@ class Vzduch:
         self._status = AC_STATUS_OK
         self._mode = AC_MODE_AUTO
         self._fan_mode = AC_FAN_MODE_LOW
+        self._thermostat_mode = 0
         self._airtouch_id = ''
         self._touch_pad_temperature = 0
         self._desired_temperature = 0
@@ -150,6 +157,7 @@ class Vzduch:
         self._status = data["aircons"][self._selected_ac]["status"]
         self._mode = data["aircons"][self._selected_ac]["mode"]
         self._fan_mode = data["aircons"][self._selected_ac]["fanMode"]
+        self._thermostat_mode = data["aircons"][self._selected_ac]["thermostatMode"]
         self._airtouch_id = data["aircons"][self._selected_ac]["airTouchId"]
         self._touch_pad_temperature= data["aircons"][self._selected_ac]["touchPadTemperature"]
         self._room_temperature = data["aircons"][self._selected_ac]["roomTemperature"]
@@ -225,6 +233,27 @@ class Vzduch:
         return self._fan_mode
 
     @property
+    def thermostat_mode(self):
+        """Return the current thermostat mode."""
+        return self._thermostat_mode
+
+    @property
+    def thermostat_mode_desc(self):
+        """Thermostat mode described"""
+        if self.thermostat_mode == 0:
+            return THERMOSTAT_MODE_AC
+        elif self.thermostat_mode == (1 + len(self.zones)):
+            return THERMOSTAT_MODE_AVERAGE
+        elif self.thermostat_mode == (2 + len(self.zones)):
+            return THERMOSTAT_MODE_AUTO
+        else:
+            temperature_zone = self.zones[len(self.zones) - 1]
+            if temperature_zone.status == 1: # Is ON
+                return THERMOSTAT_MODE_ZONE
+            else:
+                return THERMOSTAT_MODE_AC
+
+    @property
     def airtouch_id(self):
         """Return the airtouch_id."""
         return self._airtouch_id
@@ -283,6 +312,18 @@ class Vzduch:
         response = await self.prep_fetch(HTTP_POST, command)
         self.set_properties(response)
 
+    async def set_temperature_thermostat_mode(self, to_temperature):
+        """Set the desired temperature"""
+        _LOGGER.debug(f"[Vzduch] set_temperature_thermostat_mode to_temperature {to_temperature}")
+        if self.thermostat_mode_desc == THERMOSTAT_MODE_ZONE:
+            temperature_zone = self.zones[len(self.zones) - 1]
+            if temperature_zone is not None:
+                await self.set_zone_temperature(temperature_zone.id, to_temperature)
+            else:
+                _LOGGER.warning(f"[Vzduch] Cannot set set_zone_temperature - zone not available")
+        else:
+            await self.set_temperature(to_temperature)
+
     async def zone_toggle(self, zone_id):
         """Switch zone on / off"""
         _LOGGER.debug(f"[Vzduch] zone_toggle zone_id {zone_id}")
@@ -297,6 +338,21 @@ class Vzduch:
         response = await self.prep_fetch(HTTP_POST, command)
         self.set_properties(response)
 
+    async def set_zone_temperature(self, zone_id, to_temperature):
+        """Set the desired temperature for a given zone"""
+        _LOGGER.debug(f"[Vzduch] set_zone_temperature to_temperature {to_temperature}")
+        selected_zone = self.zones[zone_id]
+        if selected_zone is None:
+            _LOGGER.warning(f"[Vzduch] Selected Zone with Id {zone_id} not found")
+            return
+
+        _LOGGER.debug(f"[Vzduch] Zone with Id {zone_id} current desired temperature {selected_zone.desired_temperature}")
+        inc_dec = (TEMPERATURE_INCREMENT if to_temperature >= selected_zone.desired_temperature else TEMPERATURE_DECREMENT)
+        command = POST_ZONE_TEMPERATURE.format(self._selected_ac, zone_id, inc_dec)
+        response = await self.prep_fetch(HTTP_POST, command)
+        self.set_properties(response)
+        return selected_zone.desired_temperature
+
 class Vzduch_Zone:
     """ A Zone """
     def __init__(self, zone_data):
@@ -309,6 +365,7 @@ class Vzduch_Zone:
         self._status = zone_data["status"]
         self._fan_value = zone_data["fanValue"]
         self._is_spill = zone_data["isSpill"]
+        self._desired_temperature = zone_data["desiredTemperature"]
         self._zone_temperature_type = zone_data["zoneTemperatureType"]
         self._sensors = []
         for sensor_data in zone_data["sensors"]:
@@ -339,6 +396,11 @@ class Vzduch_Zone:
     def is_spill(self):
         """Returns whether the zone is used as spill"""
         return self._is_spill
+
+    @property
+    def desired_temperature(self):
+        """Returns the zone desired temperature"""
+        return self._desired_temperature
 
     @property
     def zone_temperature_type(self):

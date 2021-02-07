@@ -113,6 +113,55 @@ async def async_setup_entry(hass, entry, async_add_entities):
     _LOGGER.debug(f"[AT3Climate] Init {vzduch_api.name}")
     async_add_entities([AirTouch3Climate(vzduch_api)], update_before_add=True)
 
+    async def handle_set_zone_temperature(call):
+        """Handle the service call."""
+        _LOGGER.debug(f"[AT3Climate.handle_set_zone_temperature] Call Data [{call}]")
+
+        desired_temperature = call.data.get('temperature')
+        if desired_temperature is None:
+            _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Desired Temperature not specified")
+            return
+
+        if type(desired_temperature) != int:
+            _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Desired Temperature must be a whole positive number")
+            return
+
+        if desired_temperature < 16 or desired_temperature >32:
+            _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Desired Temperature out of range. Valid temperature range is 16 to 32 degrees {desired_temperature}")
+            return
+
+        entity_id = call.data.get('entity_id')
+        if entity_id is None:
+            _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] entity_id not specified")
+            return
+
+        entity_item = hass.states.get(entity_id)
+        if entity_item is None:
+            _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Entity not found {entity_id}")
+            return
+
+        zone_id = entity_item.attributes['id']
+        if zone_id is None:
+            _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Entity does not have id attribute {entity_item}")
+            return
+
+        current_desired_temperature = entity_item.attributes['desired_temperature']
+        if current_desired_temperature is None:
+            _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Entity does not have desired_temperature attribute {entity_item}")
+            return
+
+        while desired_temperature != current_desired_temperature:
+            current_desired_temperature = await vzduch_api.set_zone_temperature(zone_id, desired_temperature)
+            _LOGGER.debug(f"current_desired_temperature {current_desired_temperature} {desired_temperature}")
+            if current_desired_temperature is None:
+                _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Desired Temperature failed. Try again")
+                break
+            if current_desired_temperature == 0:
+                _LOGGER.warning(f"[AT3Climate.handle_set_zone_temperature] Desired Temperature for zone id {zone_id} cannot be set. Zone is non temperature controlled")
+                break
+
+    hass.services.async_register(AT3_DOMAIN, "set_zone_temperature", handle_set_zone_temperature)
+
 
 class AirTouch3Climate(ClimateEntity):
     """Representation of a AirTouch3 Unit."""
@@ -229,7 +278,7 @@ class AirTouch3Climate(ClimateEntity):
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is not None:
             _LOGGER.debug(f"[AT3Climate] async_set_temperature Set temperature to [{temperature}]")
-            await self._api.set_temperature(temperature)
+            await self._api.set_temperature_thermostat_mode(temperature)
 
     async def async_update(self):
         """Retrieve latest state."""

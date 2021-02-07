@@ -1,0 +1,9 @@
+set_zone_temperature:
+  description: Set a zones desired temperature
+  fields:
+    entity_id:
+      description: "The zone entity id"
+      example: switch.zone_bedroom
+    temperature:
+      description: "The desired temperature (in celcius) and valid range: 16 to 32"
+      example: 24

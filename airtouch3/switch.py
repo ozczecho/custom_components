@@ -90,13 +90,20 @@ class ZoneSwitch(ToggleEntity):
         return {
             "zone_temperature_type": self._zone.zone_temperature_type, 
             "fan_value": self._zone.fan_value,
-            "is_spill": self._zone.is_spill
+            "is_spill": self._zone.is_spill,
+            "id": self._zone.id,
+            "desired_temperature": self._zone.desired_temperature
             }
 
     @property
     def zone_temperature_type(self):
         """Return the zone temperature type."""
         return self._zone.zone_temperature_type
+
+    @property
+    def zone_desired_temperature(self):
+        """Return the zone desired temperature."""
+        return self._zone.desired_temperature
 
     async def async_update(self):
         """Retrieve latest state."""
