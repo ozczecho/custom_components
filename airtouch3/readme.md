@@ -1,4 +1,4 @@
-# AirTouch 3 Integration
+# AirTouch 3 Integration (Last update: 6th Feb 2021)
 
 A Home Assistant custom climate component that lets you control your AirTouch 3 console locally. It has a dependancy on the [vzduch-dotek](https://github.com/ozczecho/vzduch-dotek) api.
 
@@ -39,7 +39,7 @@ If your `thermostatMode` is not Zone, you can still set a zones desired temperat
 
 ## Limitations
 
-* The climate component tested against Home Assistant version `2021.2.2`.
+* The climate component tested against Home Assistant version `2021.1.5`.
 * Only a subset of `AirTouch 3` Api have been implemented via `vzduch-dotek`. The imlemented Api include:
     * Get current state of aircon
     * Switch aircon on / off
