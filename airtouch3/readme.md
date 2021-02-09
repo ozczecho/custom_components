@@ -60,4 +60,4 @@ A certain level of technical experience is required to get this up and running s
 ## Lovelace
 
 Here is what my setup looks like\
-![AirTouch3 in Lovelave](https://github.com/ozczecho/custom_components/blob/master/airtouch3/at3.PNG?raw=true)
+![AirTouch3 in Lovelave](https://github.com/ozczecho/custom_components/airtouch3/at3.PNG?raw=true)
