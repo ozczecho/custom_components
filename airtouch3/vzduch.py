@@ -66,7 +66,7 @@ class Vzduch:
         self._timeout = timeout
         self._available = False
         self._base_url = "http://{host}:{port}".format(host=self.host, port=self.port)
-        _LOGGER.debug("[Vzduch] __init__  with {0}".format(self._base_url))
+        _LOGGER.debug(f"[Vzduch] __init__  with [{self._base_url}]")
 
         self._selected_ac = 0 
         self._power = AC_POWER_OFF
@@ -90,10 +90,10 @@ class Vzduch:
             response = await resp_obj.text()
             if (resp_obj.status == 200 or resp_obj.status == 204):
                 _LOGGER.debug("[Vzduch] Have a response")
+                _LOGGER.debug(f"Host [{self._host}] returned HTTP status code [{resp_obj.status}] for GET command [{command}]")
                 return response
             else:
-                _LOGGER.error(f"Host [{self._host}] returned HTTP status code [{resp_obj.status}] to GET command at "
-                    "end point [{command}]")
+                _LOGGER.error(f"Host [{self._host}] returned HTTP status code [{resp_obj.status}] for GET command [{command}]")
                 return None
 
     async def fetch_post(self, command, data):
@@ -106,8 +106,7 @@ class Vzduch:
                 _LOGGER.debug("[Vzduch] Have a response")
                 return response
             else:
-                _LOGGER.error(f"Host [{self._host}] returned HTTP status code [{resp_obj.status}] to POST command at "
-                    "end point [{command}]")
+                _LOGGER.error(f"Host [{self._host}] returned HTTP status code [{resp_obj.status}] for POST command [{command}]")
                 return None
 
     async def prep_fetch(self, verb, command, data = None, retries = 5):
