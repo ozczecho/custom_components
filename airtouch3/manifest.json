@@ -11,5 +11,6 @@
     "codeowners": [
         "@ozczecho"
     ],
-    "requirements": []
+    "requirements": [],
+    "version": "0.5.0"
 }
