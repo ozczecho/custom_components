@@ -7,5 +7,6 @@
     "codeowners": [
         "@ozczecho"
     ],
-    "config_flow": true
+    "config_flow": true,
+    "version": "0.3.0"
 }
