@@ -85,7 +85,7 @@ class ZoneSwitch(ToggleEntity):
         return self._zone.is_spill
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """attributes for the zone"""
         return {
             "zone_temperature_type": self._zone.zone_temperature_type, 

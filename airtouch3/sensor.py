@@ -88,7 +88,7 @@ class AT3Sensor(Entity):
         return SENSOR_TYPE_TEMPERATURE
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """attributes for the sensor"""
         return {
             "is_available": self._sensor.is_available, 
