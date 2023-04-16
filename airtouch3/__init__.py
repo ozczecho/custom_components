@@ -19,7 +19,7 @@ from . import config_flow  # noqa: F401
 
 _LOGGER = logging.getLogger(__name__)
 
-COMPONENT_TYPES = ["climate", "sensor", "switch"]
+COMPONENT_TYPES = ["climate", "sensor", "switch", "fan"]
 
 async def async_setup(hass, config):
     """Connect to Airtouch3 Unit"""

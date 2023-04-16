@@ -55,6 +55,7 @@ POST_AC_TEMPERATURE = "/api/aircons/{0}/temperature/{1}"
 POST_ZONE_TEMPERATURE = "/api/aircons/{0}/zones/{1}/temperature/{2}"
 POST_ZONE_TOGGLE = "/api/aircons/{0}/zones/{1}/toggle"
 POST_ZONE_SWITCH = "/api/aircons/{0}/zones/{1}/switch/{2}"
+POST_ZONE_DAMPER = "/api/aircons/{0}/zones/{1}/damper/{2}"
 
 class Vzduch:
     """Api access to Vzduch.Dotek Net Server"""
@@ -351,6 +352,19 @@ class Vzduch:
         response = await self.prep_fetch(HTTP_POST, command)
         self.set_properties(response)
         return selected_zone.desired_temperature
+
+    async def set_zone_damper(self, zone_id, percentage):
+        """Set the desired damper percentage for a given zone"""
+        _LOGGER.debug(f"[Vzduch] set_zone_damper percentage {percentage}")
+        selected_zone = self.zones[zone_id]
+        if selected_zone is None:
+            _LOGGER.warning(f"[Vzduch] Selected Zone with Id {zone_id} not found")
+            return
+
+        command = POST_ZONE_DAMPER.format(self._selected_ac, zone_id, percentage)
+        response = await self.prep_fetch(HTTP_POST, command)
+        self.set_properties(response)
+        return selected_zone.fan_value
 
 class Vzduch_Zone:
     """ A Zone """
