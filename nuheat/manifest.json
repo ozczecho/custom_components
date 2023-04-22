@@ -1,0 +1,21 @@
+{
+    "domain": "nuheat",
+    "name": "NuHeat",
+    "codeowners": [
+        "@ozczecho"
+    ],
+    "config_flow": true,
+    "dhcp": [
+        {
+            "hostname": "nuheat",
+            "macaddress": "002338*"
+        }
+    ],
+    "documentation": "https://www.home-assistant.io/integrations/nuheat",
+    "iot_class": "cloud_polling",
+    "loggers": [
+        "nuheat"
+    ],
+    "version": "1.7.0",
+    "requirements": []
+}

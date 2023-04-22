@@ -1,0 +1,26 @@
+{
+    "title": "MyThermostat Setup",
+    "config": {
+        "error": {
+            "unknown": "[%key:common::config_flow::error::unknown%]",
+            "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+            "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+            "invalid_thermostat": "The thermostat serial number is invalid."
+        },
+        "abort": {
+            "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+        },
+        "step": {
+            "user": {
+                "title": "Connect to the Thermostat",
+                "description": "You will need to obtain your thermostat\u2019s numeric serial number or ID by logging into https://mythermostat.info and selecting your thermostat(s).",
+                "data": {
+                    "username": "Username used to log into mythermostat",
+                    "password": "Password for the mythermostat site",
+                    "serial_number": "Serial #",
+                    "brand": "Brand"
+                }
+            }
+        }
+    }
+}

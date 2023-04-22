@@ -1,7 +1,14 @@
-API_URL_AU = "https://www.mythermostat.info/api"
-API_URL_USA = "https://www.mythermostat.info/api"
+"""Constants for NuHeat thermostats."""
+from homeassistant.const import Platform
 
-# NuHeat Schedule Modes
-SCHEDULE_RUN = 1
-SCHEDULE_TEMPORARY_HOLD = 2  # hold the target temperature until the next scheduled program
-SCHEDULE_HOLD = 3  # hold the target temperature until it is manually changed
+DOMAIN = "nuheat"
+
+PLATFORMS = [Platform.CLIMATE]
+
+CONF_SERIAL_NUMBER = "serial_number"
+
+CONF_BRAND = "brand"
+
+MANUFACTURER = "NuHeat"
+
+NUHEAT_API_STATE_SHIFT_DELAY = 2
