@@ -236,7 +236,7 @@ class AirTouch3Climate(ClimateEntity):
 
     @property
     def hvac_mode(self):
-        """Return current operation ie. heat, cool, idle."""
+        """Return current operation ie. heat, cool, idle. Used to determine state."""
         ac_mode = self._api.mode
         return AT3_TO_HA_STATE.get(ac_mode, HVAC_MODE_HEAT_COOL)
 
@@ -266,7 +266,7 @@ class AirTouch3Climate(ClimateEntity):
             if self._api.power == AC_POWER_OFF:
                 await self._api.power_switch(AC_POWER_ON)
             
-            await self._api.set_mode(HA_STATE_TO_AT3.get(hvac_mode)) #MBTODO
+        await self._api.set_mode(HA_STATE_TO_AT3.get(hvac_mode)) #MBTODO
 
     async def async_set_fan_mode(self, fan_mode):
         """Set fan mode."""
@@ -278,7 +278,7 @@ class AirTouch3Climate(ClimateEntity):
         temperature = kwargs.get(ATTR_TEMPERATURE)
         if temperature is not None:
             _LOGGER.debug(f"[AT3Climate] async_set_temperature Set temperature to [{temperature}]")
-            await self._api.set_temperature_thermostat_mode(temperature)
+            await self._api.set_temperature(temperature)
 
     async def async_update(self):
         """Retrieve latest state."""
